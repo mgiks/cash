@@ -72,52 +72,70 @@ DynArr get_all_cmd_abs_paths() {
 }
 
 char *extract_cmd_from_abs_path(const char *cmd_abs_path) {
-    char *cmd_abs_path_copy = malloc(strlen(cmd_abs_path) + 1);
-    strcpy(cmd_abs_path_copy, strdup(cmd_abs_path));
+    char *last_slash = strrchr(cmd_abs_path, '/');
 
-    strrev(cmd_abs_path_copy);
-
-    size_t i = 0;
-    while (cmd_abs_path_copy[i] != '/') {
-        ++i;
+    if (!last_slash) {
+        return strdup(cmd_abs_path);
     }
 
-    char *cmd = malloc(i + 1);
-    strncpy(cmd, cmd_abs_path_copy, i);
-    cmd[i] = '\0';
-
-    strrev(cmd);
-
-    return cmd;
+    return strdup(last_slash + 1);
 }
 
 char *get_cmd_abs_path(DynArr cmds, char *cmd) {
-    const size_t cmds_size = cmds._size;
-    char *found = NULL;
-
-    for (size_t i = 0; i < cmds_size; ++i) {
+    for (size_t i = 0; i < cmds._size; ++i) {
         char *cmd_abs_path;
         get_from_dynarr(&cmd_abs_path, &cmds, i);
 
         char *cmd_to_compare_to = extract_cmd_from_abs_path(cmd_abs_path);
 
-        if (!strcmp(cmd, cmd_to_compare_to)) {
-            found = cmd_abs_path;
-            break;
+        char *cmd_dup = strdup(cmd);
+
+        char *cmd_without_args = strtok(cmd_dup, " ");
+
+        if (!strcmp(cmd_without_args, cmd_to_compare_to)) {
+            free(cmd_to_compare_to);
+            free(cmd_without_args);
+            return cmd_abs_path;
         };
+
+        free(cmd_to_compare_to);
+        free(cmd_without_args);
     }
 
-    return found;
+    return NULL;
 }
 
-void execute_cmd(DynArr cmds, char *cmd) {
-    char *cmd_abs_path = get_cmd_abs_path(cmds, cmd);
+char *parse_args(const char *input) {
+    char *args = strchr(input, ' ');
 
-    if (!cmd_abs_path) {
-        fprintf(stderr, "cash: %s command not found\n", cmd);
-    } else {
-        printf("%s\n", cmd_abs_path);
+    if (!args) {
+        return NULL;
     }
 
-    system(cmd_abs_path);
+    return strdup(args);
+}
+
+void execute(DynArr cmds, char *input) {
+    char *cmd_abs_path = get_cmd_abs_path(cmds, input);
+    char *args = parse_args(input);
+
+    if (!cmd_abs_path) {
+        fprintf(stderr, "cash: %s command not found\n", input);
+        return;
+    }
+
+    char *cmd;
+    if (args) {
+        cmd = malloc(strlen(cmd_abs_path) + strlen(args) + 1);
+        if (!cmd) {
+            perror("unable to allocate space for cmd");
+            exit(1);
+        }
+        sprintf(cmd, "%s%s", cmd_abs_path, args);
+    } else {
+        cmd = strdup(cmd_abs_path);
+    }
+
+    system(cmd);
+    free(cmd);
 }

@@ -53,8 +53,6 @@ void pop_from_dynarr(DynArr *arr) {
     --arr->_size;
 }
 
-size_t get_dynarr_size(DynArr *arr) { return arr->_size; }
-
 void get_from_dynarr(void *out, DynArr *arr, size_t i) {
     if (i >= arr->_size) {
         fprintf(stderr, "Unable to get from dynamic array\n");
@@ -69,5 +67,3 @@ void clear_dynarr(DynArr *arr) {
     arr->_data = NULL;
     arr->_size = arr->_capacity = 0;
 }
-
-size_t get_dynarr_capacity(DynArr *arr) { return arr->_capacity; }

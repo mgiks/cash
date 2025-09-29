@@ -6,7 +6,18 @@
 #include "buf.c"
 #include "cmd.c"
 
-void trim_newline_char(char *str) { str[strlen(str) - 1] = '\0'; }
+void trim_leading_space(char **str) {
+    char *str_copy = strdup(*str);
+    char c;
+    size_t i = 0;
+
+    while ((c = (*str)[i]) == ' ') {
+        ++str_copy;
+        ++i;
+    }
+
+    *str = str_copy;
+}
 
 int main(void) {
     size_t buf_size = 32;
@@ -17,9 +28,12 @@ int main(void) {
         printf(">");
         getline(&buf._data, &buf_size, stdin);
 
-        trim_newline_char(buf._data);
+        // Trim newline char
+        buf._data[strlen(buf._data) - 1] = '\0';
 
-        execute_cmd(cmd_abs_paths, buf._data);
+        trim_leading_space(&buf._data);
+
+        execute(cmd_abs_paths, buf._data);
     }
 
     free(buf._data);
