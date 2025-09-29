@@ -11,7 +11,10 @@ typedef struct {
 } DynArr;
 
 DynArr new_dynarr(size_t elem_size) {
-    DynArr arr = {malloc(elem_size), 0, 1, elem_size};
+    DynArr arr = {._data = malloc(elem_size),
+                  ._size = 0,
+                  ._capacity = 1,
+                  ._elem_size = elem_size};
     if (!arr._data) {
         fprintf(stderr, "Unable to allocate dynamic array\n");
         exit(1);
@@ -22,15 +25,18 @@ DynArr new_dynarr(size_t elem_size) {
 void push_to_dynarr(DynArr *arr, void *elem) {
     if (arr->_size == arr->_capacity) {
         size_t new_capacity = arr->_capacity * 2;
-        void *new_data = malloc(new_capacity * arr->_elem_size);
-        if (!new_data) {
+
+        void *reallocated_data = malloc(new_capacity * arr->_elem_size);
+        if (!reallocated_data) {
             fprintf(stderr,
                     "Unable to allocate more space for dynamic array\n");
             exit(1);
         }
-        memcpy(new_data, arr->_data, arr->_size * arr->_elem_size);
+
+        memcpy(reallocated_data, arr->_data, arr->_size * arr->_elem_size);
         free(arr->_data);
-        arr->_data = new_data;
+
+        arr->_data = reallocated_data;
         arr->_capacity = new_capacity;
     }
 
@@ -47,11 +53,14 @@ void pop_from_dynarr(DynArr *arr) {
     --arr->_size;
 }
 
-void get_from_dynarr(DynArr *arr, size_t i, void *out) {
+size_t get_dynarr_size(DynArr *arr) { return arr->_size; }
+
+void get_from_dynarr(void *out, DynArr *arr, size_t i) {
     if (i >= arr->_size) {
         fprintf(stderr, "Unable to get from dynamic array\n");
         exit(1);
     }
+
     memcpy(out, (char *)arr->_data + i * arr->_elem_size, arr->_elem_size);
 }
 
@@ -61,6 +70,4 @@ void clear_dynarr(DynArr *arr) {
     arr->_size = arr->_capacity = 0;
 }
 
-size_t get_size_of_dynarr(DynArr *arr) { return arr->_size; }
-
-size_t get_capacity_of_dynarr(DynArr *arr) { return arr->_capacity; }
+size_t get_dynarr_capacity(DynArr *arr) { return arr->_capacity; }
