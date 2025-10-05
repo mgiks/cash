@@ -3,8 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "dynarr.c"
+#include "utils.c"
 
 void strrev(char *s) {
     size_t l = 0, r = strlen(s) - 1;
@@ -105,37 +109,71 @@ char *get_cmd_abs_path(DynArr cmds, char *cmd) {
     return NULL;
 }
 
-char *parse_args(const char *input) {
-    char *args = strchr(input, ' ');
+char **parse_args(char *input, char *cmd_name) {
+    char *input_copy = malloc(strlen(input) + 1);
+    strcpy(input_copy, input);
 
-    if (!args) {
+    size_t i = 0;
+    while (input_copy[i] != ' ' && input_copy[i] != '\0') {
+        ++i;
+    }
+
+    char *args_str = input_copy + i;
+    if (!*(args_str)) {
         return NULL;
     }
 
-    return strdup(args);
+    trim_leading_space(&args_str);
+
+    DynArr args = new_dynarr(sizeof(char *));
+    push_to_dynarr(&args, &cmd_name);
+
+    char *arg = strtok(args_str, " ");
+
+    while (arg) {
+        push_to_dynarr(&args, &arg);
+        arg = strtok(NULL, " ");
+    }
+
+    char *null_str = NULL;
+
+    push_to_dynarr(&args, &null_str);
+
+    return args._data;
+}
+
+char *parse_cmd(char *input) {
+    char *input_copy = malloc(strlen(input) + 1);
+    strcpy(input_copy, input);
+
+    char *cmd = strtok(input_copy, " ");
+    if (!cmd) {
+        return input;
+    }
+
+    return cmd;
 }
 
 void execute(DynArr cmds, char *input) {
     char *cmd_abs_path = get_cmd_abs_path(cmds, input);
-    char *args = parse_args(input);
+    char *cmd = parse_cmd(input);
+    char **args = parse_args(input, cmd);
 
     if (!cmd_abs_path) {
         fprintf(stderr, "cash: %s command not found\n", input);
         return;
     }
 
-    char *cmd;
-    if (args) {
-        cmd = malloc(strlen(cmd_abs_path) + strlen(args) + 1);
-        if (!cmd) {
-            perror("unable to allocate space for cmd");
-            exit(1);
-        }
-        sprintf(cmd, "%s%s", cmd_abs_path, args);
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("fork");
+        exit(1);
+    } else if (pid == 0) {
+        execv(cmd_abs_path, args);
     } else {
-        cmd = strdup(cmd_abs_path);
+        wait(NULL);
     }
 
-    system(cmd);
     free(cmd);
 }

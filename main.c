@@ -6,19 +6,6 @@
 #include "buf.c"
 #include "cmd.c"
 
-void trim_leading_space(char **str) {
-    char *str_copy = strdup(*str);
-    char c;
-    size_t i = 0;
-
-    while ((c = (*str)[i]) == ' ') {
-        ++str_copy;
-        ++i;
-    }
-
-    *str = str_copy;
-}
-
 int main(void) {
     size_t buf_size = 32;
     Buffer buf = new_buf(buf_size);
