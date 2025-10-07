@@ -29,6 +29,11 @@ int main() {
 
     while (1) {
         getcwd(cwd, path_max);
+
+        if (!strcmp(home_dir, cwd)) {
+            cwd = "~";
+        }
+
         printf("%s> ", cwd);
 
         getline(&buf._data, &buf_size, stdin);
