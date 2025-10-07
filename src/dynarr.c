@@ -1,4 +1,4 @@
-#include "dynarr.h"
+#include "../include/dynarr.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -4,8 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cmd.h"
-#include "utils.h"
+#include "../include/cmd.h"
+#include "../include/utils.h"
 
 typedef struct {
     char *_data;

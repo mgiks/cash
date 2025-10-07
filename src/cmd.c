@@ -1,4 +1,4 @@
-#include "cmd.h"
+#include "../include/cmd.h"
 
 #include <dirent.h>
 #include <stdio.h>
@@ -7,8 +7,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "dynarr.h"
-#include "utils.h"
+#include "../include/dynarr.h"
+#include "../include/utils.h"
 
 static DynArr cmd_abs_paths;
 
