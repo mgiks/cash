@@ -16,8 +16,21 @@ int main() {
     size_t buf_size = 256;
     Buffer buf = (Buffer){NULL, buf_size};
 
+    char *home_dir = getenv("HOME");
+    chdir(home_dir);
+
+    long path_max = sysconf(_PC_PATH_MAX);
+    if (path_max < 0) {
+        fprintf(stderr, "cash: unable to find PATH_MAX constant");
+        return 1;
+    }
+
+    char *cwd = malloc(path_max + 1);
+
     while (1) {
-        printf("> ");
+        getcwd(cwd, path_max);
+        printf("%s> ", cwd);
+
         getline(&buf._data, &buf_size, stdin);
 
         // Trim newline char
@@ -32,6 +45,7 @@ int main() {
         execute(buf._data);
     }
 
+    free(cwd);
     free(buf._data);
     free_cmd_abs_paths();
 
