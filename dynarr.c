@@ -1,24 +1,21 @@
+#include "dynarr.h"
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef struct {
-    void *_data;
-    size_t _size;
-    size_t _capacity;
-    size_t _elem_size;
-} DynArr;
 
 DynArr new_dynarr(size_t elem_size) {
     DynArr arr = {._data = malloc(elem_size),
                   ._size = 0,
                   ._capacity = 1,
                   ._elem_size = elem_size};
+
     if (!arr._data) {
         fprintf(stderr, "Unable to allocate dynamic array\n");
         exit(1);
     }
+
     return arr;
 }
 
@@ -62,7 +59,7 @@ void get_from_dynarr(void *out, DynArr *arr, size_t i) {
     memcpy(out, (char *)arr->_data + i * arr->_elem_size, arr->_elem_size);
 }
 
-void clear_dynarr(DynArr *arr) {
+void free_dynarr(DynArr *arr) {
     free(arr->_data);
     arr->_data = NULL;
     arr->_size = arr->_capacity = 0;

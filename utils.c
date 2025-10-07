@@ -1,15 +1,29 @@
+#include "utils.h"
+
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
-void trim_leading_space(char **str) {
-    char *str_copy = strdup(*str);
+void strrev(char *s) {
+    size_t l = 0, r = strlen(s) - 1;
     char c;
-    size_t i = 0;
 
-    while ((c = (*str)[i]) == ' ') {
-        ++str_copy;
-        ++i;
+    while (l < r) {
+        c = s[l];
+        s[l] = s[r];
+        s[r] = c;
+
+        ++l;
+        --r;
+    }
+}
+
+void trim_leading_space(char **str) {
+    char *trimmed_str = *str;
+
+    while (*trimmed_str == ' ') {
+        ++trimmed_str;
     }
 
-    *str = str_copy;
+    memmove(*str, trimmed_str, strlen(trimmed_str) + 1);
 }
