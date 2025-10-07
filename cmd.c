@@ -158,6 +158,11 @@ void execute(char *input) {
     char *cmd_abs_path = find_cmd_abs_path(cmd_name);
 
     long arg_max = sysconf(_SC_ARG_MAX);
+    if (arg_max < 0) {
+        fprintf(stderr, "cash: unable to find ARG_MAX constant");
+        exit(1);
+    }
+
     char **args = parse_args(input, arg_max);
 
     if (!cmd_abs_path) {
