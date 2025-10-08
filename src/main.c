@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,16 +26,24 @@ int main() {
         return 1;
     }
 
-    char *cwd = malloc(path_max + 1);
+    size_t path_size = path_max + 1;
+    char *cwd = malloc(path_size);
+    if (!cwd) {
+        perror("malloc");
+        return 1;
+    }
 
     while (1) {
-        getcwd(cwd, path_max);
+        if (getcwd(cwd, path_size) == NULL) {
+            fprintf(stderr, "cash: unable to determine CWD: %s\n",
+                    strerror(errno));
+        };
 
         if (!strcmp(home_dir, cwd)) {
-            cwd = "~";
+            printf("~> ");
+        } else {
+            printf("%s> ", cwd);
         }
-
-        printf("%s> ", cwd);
 
         getline(&buf._data, &buf_size, stdin);
 
@@ -47,7 +56,7 @@ int main() {
             continue;
         }
 
-        execute(buf._data);
+        execute(buf._data, cwd);
     }
 
     free(cwd);

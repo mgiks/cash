@@ -152,7 +152,7 @@ static void free_args_arr(char **args_arr, long args_arr_len) {
     free(args_arr);
 }
 
-void execute(char *input) {
+void execute(char *input, char *cwd) {
     init_cmd_abs_paths();
 
     char *cmd_name = parse_cmd_name(input);
@@ -178,6 +178,10 @@ void execute(char *input) {
 
         if (args_len > 1) {
             fprintf(stderr, "cash: exit: too many arguments\n");
+
+            free(cmd_name);
+            free_args_arr(args, arg_max);
+
             return;
         }
 
@@ -185,20 +189,88 @@ void execute(char *input) {
             char *end;
             long exit_val = strtol(args[1], &end, 10);
 
+            // At index 1 due to args list always starting with the cmd's name
             if (end == args[1] || *end != '\0' || errno == ERANGE) {
                 fprintf(stderr, "cash: exit: %s: numeric argument required\n",
                         args[1]);
+
+                free(cmd_name);
+                free_args_arr(args, arg_max);
+
                 return;
             }
+
+            free(cmd_name);
+            free_args_arr(args, arg_max);
 
             exit(exit_val);
         }
 
+        free(cmd_name);
+        free_args_arr(args, arg_max);
+
         exit(0);
+    }
+
+    if (!strcmp(cmd_name, "cd")) {
+        // Is set to -1 because the args list always starts with the cmd's name
+        size_t args_len = -1;
+        char **arg = args;
+
+        while ((*arg) != NULL) {
+            ++args_len;
+            ++arg;
+        }
+
+        if (args_len > 1) {
+            fprintf(stderr, "cash: cd: too many arguments\n");
+
+            free(cmd_name);
+            free_args_arr(args, arg_max);
+
+            return;
+        }
+
+        if (args_len == 1) {
+            // At index 1 due to args list always starting with the cmd's name
+            char *dir = malloc(strlen(cwd) + strlen(args[1]) + 2);
+
+            if (args[1][0] == '/') {
+                strcpy(dir, args[1]);
+            } else {
+                strcpy(dir, cwd);
+                strcat(dir, "/");
+                strcat(dir, args[1]);
+            }
+
+            printf("dir: %s\n", dir);
+
+            if (chdir(dir) == -1) {
+                fprintf(stderr, "cash: cd: %s: %s\n", args[1], strerror(errno));
+            };
+
+            free(dir);
+            free(cmd_name);
+            free_args_arr(args, arg_max);
+
+            return;
+        }
+
+        char *home_dir = getenv("HOME");
+        chdir(home_dir);
+
+        free(cmd_name);
+        free_args_arr(args, arg_max);
+
+        return;
     }
 
     if (!cmd_abs_path) {
         fprintf(stderr, "cash: %s command not found\n", cmd_name);
+
+        free(cmd_name);
+        free_args_arr(args, arg_max);
+
         return;
     }
 
@@ -209,6 +281,9 @@ void execute(char *input) {
             stderr,
             "cash: unable to execute command: failed to create child process"
             "process\n");
+        free(cmd_name);
+        free_args_arr(args, arg_max);
+
         exit(1);
     } else if (pid == 0) {
         execv(cmd_abs_path, args);
