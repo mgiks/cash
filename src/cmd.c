@@ -1,6 +1,7 @@
 #include "../include/cmd.h"
 
 #include <dirent.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -164,6 +165,37 @@ void execute(char *input) {
     }
 
     char **args = parse_args(input, arg_max);
+
+    if (!strcmp(cmd_name, "exit")) {
+        // Is set to -1 because the args list always starts with the cmd's name
+        size_t args_len = -1;
+        char **arg = args;
+
+        while ((*arg) != NULL) {
+            ++args_len;
+            ++arg;
+        }
+
+        if (args_len > 1) {
+            fprintf(stderr, "cash: exit: too many arguments\n");
+            return;
+        }
+
+        if (args_len == 1) {
+            char *end;
+            long exit_val = strtol(args[1], &end, 10);
+
+            if (end == args[1] || *end != '\0' || errno == ERANGE) {
+                fprintf(stderr, "cash: exit: %s: numeric argument required\n",
+                        args[1]);
+                return;
+            }
+
+            exit(exit_val);
+        }
+
+        exit(0);
+    }
 
     if (!cmd_abs_path) {
         fprintf(stderr, "cash: %s command not found\n", cmd_name);
