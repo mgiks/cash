@@ -243,8 +243,6 @@ void execute(char *input, char *cwd) {
                 strcat(dir, args[1]);
             }
 
-            printf("dir: %s\n", dir);
-
             if (chdir(dir) == -1) {
                 fprintf(stderr, "cash: cd: %s: %s\n", args[1], strerror(errno));
             };
