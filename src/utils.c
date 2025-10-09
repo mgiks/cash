@@ -1,5 +1,7 @@
 #include "../include/utils.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void strrev(char *s) {
@@ -38,4 +40,31 @@ char *trim_path(char *str) {
     }
 
     return trimmed_path;
+}
+
+char *rel_to_abs_path(char *rel_path, char *cwd) {
+    char *abs_path;
+
+    if (rel_path[0] != '.' || rel_path[1] != '.' && rel_path[1] != '/') {
+        abs_path = strdup(rel_path);
+        return abs_path;
+    }
+
+    abs_path = malloc(strlen(rel_path) + strlen(cwd) + 2);
+    if (!abs_path) {
+        perror("failed to allocate memory");
+        exit(1);
+    }
+
+    strcpy(abs_path, cwd);
+    char *rel_path_first_slash = strchr(rel_path, '/');
+
+    if (rel_path[1] == '.') {
+        char *cwd_last_slash = strrchr(cwd, '/');
+        abs_path[cwd_last_slash - abs_path] = '\0';
+    }
+
+    strcat(abs_path, rel_path_first_slash);
+
+    return abs_path;
 }

@@ -166,6 +166,14 @@ void execute(char *input, char *cwd) {
 
     char **args = parse_args(input, arg_max);
 
+    if (cmd_name[0] == '/') {
+        cmd_abs_path = cmd_name;
+    }
+
+    if (cmd_name[0] == '.') {
+        cmd_abs_path = rel_to_abs_path(cmd_name, cwd);
+    }
+
     if (!strcmp(cmd_name, "exit")) {
         // Is set to -1 because the args list always starts with the cmd's name
         size_t args_len = -1;
@@ -284,13 +292,19 @@ void execute(char *input, char *cwd) {
 
         exit(1);
     } else if (pid == 0) {
-        execv(cmd_abs_path, args);
+        if (execv(cmd_abs_path, args)) {
+            fprintf(stderr, "cash: %s: %s\n", cmd_name, strerror(errno));
+        };
     } else {
         wait(NULL);
     }
 
     free(cmd_name);
     free_args_arr(args, arg_max);
+
+    if (cmd_name[0] == '.') {
+        free(cmd_abs_path);
+    }
 }
 
 void free_cmd_abs_paths() { free_dynarr(&cmd_abs_paths); }

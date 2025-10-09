@@ -7,4 +7,6 @@ void trim_leading_space(char **str);
 
 char *trim_path(char *path);
 
+char *rel_to_abs_path(char *rel_path, char *cwd);
+
 #endif
