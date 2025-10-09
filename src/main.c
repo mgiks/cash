@@ -42,7 +42,9 @@ int main() {
         if (!strcmp(home_dir, cwd)) {
             printf("~> ");
         } else {
-            printf("%s> ", cwd);
+            char *trimmed_cwd = trim_path(cwd);
+            printf("%s> ", trimmed_cwd);
+            free(trimmed_cwd);
         }
 
         getline(&buf._data, &buf_size, stdin);
