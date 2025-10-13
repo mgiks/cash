@@ -64,6 +64,7 @@ static void init_cmd_abs_paths() {
     }
 
     free_dynarr(&dir_names);
+    free(path_copy);
 
     cmd_abs_paths = abs_paths;
 }
@@ -107,7 +108,7 @@ static char *parse_cmd_name(char *input) {
     return cmd;
 }
 
-static char **parse_args(char *input, long arg_arr_len) {
+static DynArr parse_args(char *input, long arg_arr_len) {
     char *input_copy = malloc(strlen(input) + 1);
     strcpy(input_copy, input);
 
@@ -119,26 +120,28 @@ static char **parse_args(char *input, long arg_arr_len) {
     char *args_str = input_copy + i;
     trim_leading_space(&args_str);
 
-    char **args = malloc(sizeof(char *) * arg_arr_len);
+    DynArr args = new_dynarr(sizeof(char *));
 
     char *cmd_name = parse_cmd_name(input);
-    args[0] = cmd_name;
+    push_to_dynarr(&args, &cmd_name);
 
     char *null_str = NULL;
     if (strlen(args_str) < 1) {
-        args[1] = null_str;
+        push_to_dynarr(&args, &null_str);
+
+        free(input_copy);
         return args;
     }
 
     size_t arg_i = 1;
     char *arg = strtok(args_str, " ");
     while (arg) {
-        args[arg_i] = strdup(arg);
+        char *arg_copy = strdup(arg);
+        push_to_dynarr(&args, &arg_copy);
         arg = strtok(NULL, " ");
-        ++arg_i;
     }
 
-    args[arg_i + 1] = null_str;
+    push_to_dynarr(&args, &null_str);
 
     free(input_copy);
 
@@ -146,7 +149,7 @@ static char **parse_args(char *input, long arg_arr_len) {
 }
 
 static void free_args_arr(char **args_arr, long args_arr_len) {
-    for (size_t i = 0; i < args_arr_len; ++i) {
+    for (int i = 0; i < args_arr_len; ++i) {
         free(args_arr[i]);
     }
     free(args_arr);
@@ -164,7 +167,7 @@ void execute(char *input, char *cwd) {
         exit(1);
     }
 
-    char **args = parse_args(input, arg_max);
+    DynArr args = parse_args(input, arg_max);
 
     if (cmd_name[0] == '/') {
         cmd_abs_path = cmd_name;
@@ -177,7 +180,7 @@ void execute(char *input, char *cwd) {
     if (!strcmp(cmd_name, "exit")) {
         // Is set to -1 because the args list always starts with the cmd's name
         size_t args_len = -1;
-        char **arg = args;
+        char **arg = args._data;
 
         while ((*arg) != NULL) {
             ++args_len;
@@ -188,34 +191,37 @@ void execute(char *input, char *cwd) {
             fprintf(stderr, "cash: exit: too many arguments\n");
 
             free(cmd_name);
-            free_args_arr(args, arg_max);
+            free_args_arr(args._data, args._size);
 
             return;
         }
 
         if (args_len == 1) {
-            char *end;
-            long exit_val = strtol(args[1], &end, 10);
+            char *end, *arg;
+            get_from_dynarr(&arg, &args, 1);
+
+            long exit_val = strtol(arg, &end, 10);
 
             // At index 1 due to args list always starting with the cmd's name
-            if (end == args[1] || *end != '\0' || errno == ERANGE) {
+            if (end == arg || *end != '\0' || errno == ERANGE) {
                 fprintf(stderr, "cash: exit: %s: numeric argument required\n",
-                        args[1]);
+                        arg);
 
                 free(cmd_name);
-                free_args_arr(args, arg_max);
+                free_args_arr(args._data, args._size);
 
                 return;
             }
 
             free(cmd_name);
-            free_args_arr(args, arg_max);
+            free_args_arr(args._data, args._size);
 
             exit(exit_val);
         }
 
         free(cmd_name);
-        free_args_arr(args, arg_max);
+        free_args_arr(args._data, args._size);
+        free_cmd_abs_paths();
 
         exit(0);
     }
@@ -223,7 +229,7 @@ void execute(char *input, char *cwd) {
     if (!strcmp(cmd_name, "cd")) {
         // Is set to -1 because the args list always starts with the cmd's name
         size_t args_len = -1;
-        char **arg = args;
+        char **arg = args._data;
 
         while ((*arg) != NULL) {
             ++args_len;
@@ -234,30 +240,33 @@ void execute(char *input, char *cwd) {
             fprintf(stderr, "cash: cd: too many arguments\n");
 
             free(cmd_name);
-            free_args_arr(args, arg_max);
+            free_args_arr(args._data, args._size);
 
             return;
         }
 
         if (args_len == 1) {
-            // At index 1 due to args list always starting with the cmd's name
-            char *dir = malloc(strlen(cwd) + strlen(args[1]) + 2);
+            char *arg;
+            get_from_dynarr(&arg, &args, 1);
 
-            if (args[1][0] == '/') {
-                strcpy(dir, args[1]);
+            // At index 1 due to args list always starting with the cmd's name
+            char *dir = malloc(strlen(cwd) + strlen(arg) + 2);
+
+            if (arg[0] == '/') {
+                strcpy(dir, arg);
             } else {
                 strcpy(dir, cwd);
                 strcat(dir, "/");
-                strcat(dir, args[1]);
+                strcat(dir, arg);
             }
 
             if (chdir(dir) == -1) {
-                fprintf(stderr, "cash: cd: %s: %s\n", args[1], strerror(errno));
+                fprintf(stderr, "cash: cd: %s: %s\n", arg, strerror(errno));
             };
 
             free(dir);
             free(cmd_name);
-            free_args_arr(args, arg_max);
+            free_args_arr(args._data, args._size);
 
             return;
         }
@@ -266,7 +275,7 @@ void execute(char *input, char *cwd) {
         chdir(home_dir);
 
         free(cmd_name);
-        free_args_arr(args, arg_max);
+        free_args_arr(args._data, args._size);
 
         return;
     }
@@ -275,7 +284,7 @@ void execute(char *input, char *cwd) {
         fprintf(stderr, "cash: %s command not found\n", cmd_name);
 
         free(cmd_name);
-        free_args_arr(args, arg_max);
+        free_args_arr(args._data, args._size);
 
         return;
     }
@@ -288,11 +297,11 @@ void execute(char *input, char *cwd) {
             "cash: unable to execute command: failed to create child process"
             "process\n");
         free(cmd_name);
-        free_args_arr(args, arg_max);
+        free_args_arr(args._data, args._size);
 
         exit(1);
     } else if (pid == 0) {
-        if (execv(cmd_abs_path, args)) {
+        if (execv(cmd_abs_path, args._data)) {
             fprintf(stderr, "cash: %s: %s\n", cmd_name, strerror(errno));
         };
     } else {
@@ -300,11 +309,18 @@ void execute(char *input, char *cwd) {
     }
 
     free(cmd_name);
-    free_args_arr(args, arg_max);
+    free_args_arr(args._data, args._size);
 
     if (cmd_name[0] == '.') {
         free(cmd_abs_path);
     }
 }
 
-void free_cmd_abs_paths() { free_dynarr(&cmd_abs_paths); }
+void free_cmd_abs_paths() {
+    for (size_t i = 0; i < cmd_abs_paths._size; ++i) {
+        char *cmd_abs_path;
+        get_from_dynarr(&cmd_abs_path, &cmd_abs_paths, i);
+
+        free(cmd_abs_path);
+    }
+}
