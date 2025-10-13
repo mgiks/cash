@@ -12,6 +12,7 @@
 #include "../include/utils.h"
 
 static DynArr cmd_abs_paths;
+static char *prev_dir;
 
 static void init_cmd_abs_paths() {
     if (cmd_abs_paths._size > 0) return;
@@ -249,11 +250,19 @@ void execute(char *input, char *cwd) {
             char *arg;
             get_from_dynarr(&arg, &args, 1);
 
+            char *cwd_copy = strdup(cwd);
+
             // At index 1 due to args list always starting with the cmd's name
             char *dir = malloc(strlen(cwd) + strlen(arg) + 2);
 
             if (arg[0] == '/') {
                 strcpy(dir, arg);
+            } else if (arg[0] == '-') {
+                if (prev_dir != NULL) {
+                    strcpy(dir, prev_dir);
+                } else {
+                    fprintf(stderr, "cash: cd: prev_dir not set\n");
+                }
             } else {
                 strcpy(dir, cwd);
                 strcat(dir, "/");
@@ -262,7 +271,9 @@ void execute(char *input, char *cwd) {
 
             if (chdir(dir) == -1) {
                 fprintf(stderr, "cash: cd: %s: %s\n", arg, strerror(errno));
-            };
+            } else {
+                prev_dir = cwd_copy;
+            }
 
             free(dir);
             free(cmd_name);
