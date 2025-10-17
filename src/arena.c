@@ -41,3 +41,9 @@ void *ArenaAlloc(Arena *arena, uint64_t num_of_elems, uint64_t elem_size,
     memset((void *)total_offset, 0, allocation_size);
     return (void *)total_offset;
 }
+
+void ArenaFree(Arena *arena) {
+    free(arena->buffer);
+    arena->bufferSize = 0;
+    arena->currentOffset = 0;
+}

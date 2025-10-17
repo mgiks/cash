@@ -14,4 +14,6 @@ void ArenaInit(Arena *arena, uint64_t buffer_size);
 void *ArenaAlloc(Arena *arena, uint64_t num_of_elems, uint64_t elem_size,
                  uint64_t align_size);
 
+void ArenaFree(Arena *arena);
+
 #endif
