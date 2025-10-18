@@ -1,8 +1,10 @@
 #include "../include/utils.h"
 
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void strrev(char *s) {
     size_t l = 0, r = strlen(s) - 1;
@@ -67,4 +69,18 @@ char *rel_to_abs_path(char *rel_path, char *cwd) {
     strcat(abs_path, rel_path_first_slash);
 
     return abs_path;
+}
+
+char *get_home_dir() {
+    char *home = getenv("HOME");
+    if (home != NULL) {
+        return home;
+    }
+
+    struct passwd *pw = getpwuid(getuid());
+    if (pw) {
+        return pw->pw_dir;
+    }
+
+    return NULL;
 }

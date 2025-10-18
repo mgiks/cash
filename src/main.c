@@ -17,8 +17,12 @@ int main() {
     size_t buf_size = 256;
     Buffer buf = (Buffer){NULL, buf_size};
 
-    char *home_dir = getenv("HOME");
-    chdir(home_dir);
+    char *home_dir = get_home_dir();
+    if (home_dir != NULL) {
+        chdir(home_dir);
+    } else {
+        chdir("/");
+    }
 
     long path_max = sysconf(_PC_PATH_MAX);
     if (path_max < 0) {
