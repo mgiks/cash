@@ -9,13 +9,15 @@
 #include "../include/utils.h"
 
 typedef struct {
-    char *_data;
-    size_t _size;
+    char *data;
+    size_t size;
 } Buffer;
 
 int main() {
-    size_t buf_size = 256;
-    Buffer buf = (Buffer){NULL, buf_size};
+    Buffer input_buf = (Buffer){
+        .data = NULL,
+        .size = 256,
+    };
 
     char *home_dir = get_home_dir();
     if (home_dir != NULL) {

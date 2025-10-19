@@ -1,5 +1,6 @@
 #include "../include/arena.h"
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,8 +13,8 @@ void ArenaInit(Arena *arena, uint64_t buffer_size) {
     };
 }
 
-void *ArenaAlloc(Arena *arena, uint64_t num_of_elems, uint64_t elem_size,
-                 uint64_t align_size) {
+void *ArenaAlloc(Arena *arena, size_t num_of_elems, size_t elem_size,
+                 size_t align_size) {
     // Alignment must be a power of two
     if (align_size == 0 || (align_size & (align_size - 1)) != 0) {
         return NULL;

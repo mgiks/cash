@@ -4,10 +4,10 @@
 #include <stddef.h>
 
 typedef struct {
-  void *_data;
-  size_t _size;
-  size_t _capacity;
-  size_t _elem_size;
+  void *data;
+  size_t size;
+  size_t capacity;
+  size_t elem_size;
 } DynArr;
 
 DynArr new_dynarr(size_t elem_size);
